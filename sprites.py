@@ -70,6 +70,7 @@ class ExampleAgent(Agent):
 
 
 class Aki(Agent):
+    endFlag = 0;
     def __init__(self, row, col, file_name):
         super().__init__(row, col, file_name)
 
@@ -80,36 +81,38 @@ class Aki(Agent):
         firstNode=game_map[self.row][self.col];
         endNode=game_map[goal[0]][goal[1]];
         visited=set();
+        Aki.endFlag=0;
         self.dfs(visited,graph,firstNode,endNode,path);
         return path;
 
-    def dfs(self,visited, graph, node,endNode,path):  # function for dfs
+    def dfs(self, visited, graph, node, endNode, path):  # function for dfs
+        if (Aki.endFlag==1):
+            print("Kraj");
+            return;
         if node not in visited:
             print(node.position());
             visited.add(node);
             path.append(node);
             if (endNode==node):
+                Aki.endFlag=1;
                 print("Kraj");
                 return ;
-            next=None;
-            minCost=999999999999;
             nextNodes=[];
             for neighbour in graph[node]:
-                if neighbour in visited:
-                    continue;
-                if (neighbour.cost()<minCost):
-                    minCost=neighbour.cost();
-                    nextNodes.clear();
-                    nextNodes.append(neighbour);
-                elif (neighbour.cost()==minCost):
-                    nextNodes.append(neighbour);
-
-            if (len(nextNodes)==1):
-                print('udje');
-                self.dfs(visited, graph, nextNodes[0],endNode,path);
-            elif (len(nextNodes)>1):
-                next=Graph.nextNode(node,nextNodes);
-                self.dfs(visited,graph,next,endNode,path);
+                if neighbour not in visited:
+                    object={
+                        "node":neighbour,
+                        "cost":neighbour.cost(),
+                        "direction":int(Graph.check_directionValue(node,neighbour))
+                    };
+                    nextNodes.append(object);
+            nextNodes=sorted(nextNodes,key=lambda k: (int(k["cost"]),int(k["direction"])));
+            while(len(nextNodes)>0):
+                next=nextNodes.pop(0);
+                self.dfs(visited,graph,next["node"],endNode,path);
+                if (Aki.endFlag==1):
+                    return;
+                path.pop();
 
 class Jocke(Agent):
     def __init__(self, row, col, file_name):
@@ -193,25 +196,24 @@ class Jocke(Agent):
         if len(paths)==1:
             print("Postoji jedna putanja");
             return paths[0];
-        else:
-            print("Postoji vise putanja");
-            maxSum=9223372036854775807;
-            minPath=None;
-            for path in paths:
-                sum=0;
-                for node in path:
-                    sum+=node.cost();
-                if sum<maxSum:
-                    maxSum=sum;
-                    minPath=path;
-            return minPath;
+        # else:
+        #     print("Postoji vise putanja");
+        #     maxSum=9223372036854775807;
+        #     minPath=None;
+        #     for path in paths:
+        #         sum=0;
+        #         for node in path:
+        #             sum+=node.cost();
+        #         if sum<maxSum:
+        #             maxSum=sum;
+        #             minPath=path;
+        #     return minPath;
 
 class Draza(Agent):
     def __init__(self, row, col, file_name):
         super().__init__(row, col, file_name)
 
     def nodesNext(self,graph,node,nodesNext):
-        nodes=[];
         nodes=sorted(nodesNext,key=lambda k: (int(k["cost"]),int(k["nodes_number"])));
         return nodes;
 
@@ -235,7 +237,6 @@ class Draza(Agent):
         };
         queue.append(obj);
         visited.append(n);
-        paths=[];
         while len(queue)>0:  # Creating loop to visit each node
             path = queue.pop(0);
             # get the last node from the path
@@ -267,8 +268,7 @@ class Bole(Agent):
     def __init__(self, row, col, file_name):
         super().__init__(row, col, file_name)
 
-    def nodesNext(self,graph,node,nodesNext):
-        nodes=[];
+    def nodesNext(self,nodesNext):
         nodes=sorted(nodesNext,key=lambda k: (int(k["cost"]),int(k["nodes_number"])));
         return nodes;
 
@@ -434,6 +434,17 @@ class Graph():
             return 'e';
         return 'w';
 
+    @staticmethod
+    def check_directionValue(node1,node2):
+        position1=node1.position();
+        position2=node2.position();
+        if (position2[0]-position1[0]==1):
+            return 2;
+        elif (position2[0]-position1[0]==-1):
+            return 0;
+        elif (position2[1]-position1[1]==1):
+            return 1;
+        return 3;
 class Tile(BaseSprite):
     def __init__(self, row, col, file_name):
         super(Tile, self).__init__(row, col, file_name)
